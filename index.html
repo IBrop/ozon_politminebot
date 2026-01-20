@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ozon | ПолитМайт</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Inter, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f3f3f7;
+    }
+
+    header {
+      background: #6a00ff;
+      color: white;
+      padding: 14px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 12px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .card img {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    .title {
+      font-size: 18px;
+      margin: 8px 0;
+      font-weight: 600;
+    }
+
+    .info {
+      color: #555;
+      font-size: 14px;
+    }
+
+    .price {
+      font-size: 22px;
+      color: #6a00ff;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #6a00ff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:active {
+      opacity: 0.8;
+    }
+
+    .cart {
+      margin-top: 12px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>Ozon | ПолитМайт (Beta)</header>
+
+<div class="container">
+
+  <!-- КАРТОЧКА ТОВАРА -->
+  <div class="card">
+    <img src="https://i.imgur.com/5b6XGdT.png" />
+    <div class="title">Дёрн (трава)</div>
+    <div class="info">📦 В наличии: 64 блока</div>
+    <div class="info">🏙 Продавец: Гос. склад</div>
+    <div class="price">25₽ / блок</div>
+    <button onclick="addToCart()">🛒 В корзину</button>
+  </div>
+
+  <!-- КОРЗИНА -->
+  <div class="cart" id="cart">
+    <b>🧺 Корзина</b>
+    <div id="cartItems"></div>
+  </div>
+
+</div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.expand();
+
+  let cartCount = 0;
+
+  function addToCart() {
+    cartCount++;
+
+    document.getElementById("cart").style.display = "block";
+    document.getElementById("cartItems").innerText =
+      "Дёрн × " + cartCount + " шт.";
+
+    tg.showAlert("Товар добавлен в корзину");
+  }
+</script>
+
+</body>
+</html>
