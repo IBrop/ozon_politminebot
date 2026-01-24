@@ -12,18 +12,21 @@ header {
   background:#6a00ff; color:#fff; padding:12px;
   display:flex; justify-content:space-between; align-items:center;
 }
-.icon { cursor:pointer; font-size:20px; }
-
 .container { padding:12px; }
+
 .card {
   background:#fff; border-radius:16px; padding:12px;
   box-shadow:0 6px 16px rgba(0,0,0,.08);
 }
+
 .card img {
   width:100%; aspect-ratio:1/1;
   object-fit:cover; border-radius:12px;
 }
-.price { color:#6a00ff; font-size:22px; font-weight:bold; }
+
+.price {
+  color:#6a00ff; font-size:22px; font-weight:bold;
+}
 
 button {
   width:100%; padding:14px; border:none;
@@ -31,17 +34,21 @@ button {
   color:white; font-size:16px; margin-top:8px;
 }
 
+.admin-btn {
+  background:#444;
+}
+
+.edit {
+  border:2px dashed #6a00ff;
+}
+
 .modal {
   display:none; position:fixed; inset:0;
   background:#fff; z-index:10; padding:12px;
-  overflow:auto;
 }
 
 input {
   width:100%; padding:10px; margin:6px 0;
-}
-.small-btn {
-  background:#aaa;
 }
 </style>
 </head>
@@ -50,63 +57,44 @@ input {
 
 <header>
   <b>Ozon | ПолитМайт</b>
+  <button class="admin-btn" onclick="toggleAdmin()" id="adminToggle">
+    ⚙️ Админка
+  </button>
 </header>
 
 <div class="container">
-  <button onclick="openCart()">🧺 Открыть корзину</button>
-  <button onclick="openAdmin()" style="background:#444">⚙️ Админка</button>
-</div>
 
-
-<div class="container">
-  <div class="card">
-    <img id="img" src="dern.png">
+  <div class="card" id="productCard" onclick="cardClick()">
+    <img src="dern.png">
     <h3 id="name">Дёрн (трава)</h3>
     <div>📦 В наличии: <b id="stock">64</b></div>
     <div class="price"><span id="price">25</span> ₽ / блок</div>
-    <button onclick="addToCart()">🛒 В корзину</button>
+
+    <button onclick="addToCart(event)" id="cartBtn">
+      🛒 В корзину
+    </button>
   </div>
+
 </div>
 
-<!-- КОРЗИНА -->
-<div class="modal" id="cart">
-  <h2>🧺 Корзина</h2>
-  <div id="cartInfo"></div>
+<!-- РЕДАКТОР -->
+<div class="modal" id="editor">
+  <h2>✏️ Редактирование товара</h2>
 
-  <h3>Данные заказа</h3>
-  <input id="nick" placeholder="Ваш ник">
-  <input id="receiver" placeholder="Ник получателя (если есть)">
-  <input id="server" placeholder="Сервер">
+  <input id="editName" placeholder="Название">
+  <input id="editPrice" type="number" placeholder="Цена">
+  <input id="editStock" type="number" placeholder="Количество">
 
-  <button onclick="sendOrder()">📦 Заказать</button>
-  <button class="small-btn" onclick="closeCart()">Закрыть</button>
-</div>
-
-<!-- АДМИНКА -->
-<div class="modal" id="admin">
-  <h2>⚙️ Админ-панель</h2>
-
-  <div id="loginBox">
-    <input id="adminUser" placeholder="Логин">
-    <input id="adminPass" type="password" placeholder="Пароль">
-    <button onclick="adminLogin()">Войти</button>
-  </div>
-
-  <div id="adminPanel" style="display:none">
-    <input id="editName" placeholder="Название">
-    <input id="editPrice" type="number" placeholder="Цена">
-    <input id="editStock" type="number" placeholder="Количество">
-    <button onclick="saveProduct()">💾 Сохранить</button>
-  </div>
-
-  <button class="small-btn" onclick="closeAdmin()">Закрыть</button>
+  <button onclick="saveEdit()">💾 Сохранить</button>
+  <button class="admin-btn" onclick="closeEditor()">Закрыть</button>
 </div>
 
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// ДАННЫЕ ТОВАРА (beta, локально)
+let adminMode = false;
+
 let product = {
   name: "Дёрн (трава)",
   price: 25,
@@ -115,80 +103,71 @@ let product = {
 
 let cartCount = 0;
 
-// ─── МАГАЗИН ───
+// ─── RENDER ───
 function render() {
   name.innerText = product.name;
   price.innerText = product.price;
   stock.innerText = product.stock;
+
+  cartBtn.innerText = adminMode
+    ? "🛒 В корзину (админка активирована)"
+    : "🛒 В корзину";
+
+  adminToggle.innerText = adminMode
+    ? "⚙️ Админка (активировано)"
+    : "⚙️ Админка";
+
+  productCard.classList.toggle("edit", adminMode);
 }
+
 render();
 
-function addToCart() {
+// ─── ADMIN MODE ───
+function toggleAdmin() {
+  adminMode = !adminMode;
+  render();
+}
+
+// ─── CARD CLICK ───
+function cardClick() {
+  if (!adminMode) return;
+
+  editor.style.display = "block";
+  editName.value = product.name;
+  editPrice.value = product.price;
+  editStock.value = product.stock;
+}
+
+// ─── SAVE EDIT ───
+function saveEdit() {
+  product.name = editName.value;
+  product.price = Number(editPrice.value);
+  product.stock = Number(editStock.value);
+  closeEditor();
+  render();
+}
+
+function closeEditor() {
+  editor.style.display = "none";
+}
+
+// ─── CART ───
+function addToCart(e) {
+  e.stopPropagation();
+
+  if (adminMode) {
+    tg.showAlert("Админ-режим включён. Редактируйте карточку.");
+    return;
+  }
+
   if (product.stock <= 0) {
     tg.showAlert("Нет в наличии");
     return;
   }
-  cartCount++;
+
   product.stock--;
+  cartCount++;
   render();
-}
-
-// ─── КОРЗИНА ───
-function openCart() {
-  cart.style.display = "block";
-  cartInfo.innerText =
-    `${product.name} × ${cartCount} = ${cartCount * product.price} ₽`;
-}
-function closeCart() {
-  cart.style.display = "none";
-}
-
-// ─── ОТПРАВКА ЗАКАЗА В БОТА ───
-function sendOrder() {
-  if (cartCount === 0) {
-    tg.showAlert("Корзина пуста");
-    return;
-  }
-
-  const data = {
-    product: product.name,
-    count: cartCount,
-    total: cartCount * product.price,
-    nick: nick.value,
-    receiver: receiver.value,
-    server: server.value
-  };
-
-  tg.sendData(JSON.stringify(data));
-  tg.close();
-}
-
-// ─── АДМИНКА ───
-function openAdmin() {
-  admin.style.display = "block";
-}
-function closeAdmin() {
-  admin.style.display = "none";
-}
-
-function adminLogin() {
-  if (adminUser.value === "IBrop" && adminPass.value === "1979") {
-    loginBox.style.display = "none";
-    adminPanel.style.display = "block";
-    editName.value = product.name;
-    editPrice.value = product.price;
-    editStock.value = product.stock;
-  } else {
-    alert("Неверный логин или пароль");
-  }
-}
-
-function saveProduct() {
-  product.name = editName.value;
-  product.price = Number(editPrice.value);
-  product.stock = Number(editStock.value);
-  render();
-  alert("Сохранено (локально)");
 }
 </script>
 
