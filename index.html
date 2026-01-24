@@ -2,53 +2,82 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Ozon | ПолитМайт</title>
+<title>Ozon | ПолитМайн</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-body { margin:0; font-family:Arial; background:#f3f3f7; }
-header {
-  background:#6a00ff; color:#fff; padding:12px;
-  display:flex; justify-content:space-between; align-items:center;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f3f7;
 }
-.container { padding:12px; }
+
+header {
+  background: #6a00ff;
+  color: white;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.container {
+  padding: 12px;
+}
 
 .card {
-  background:#fff; border-radius:16px; padding:12px;
-  box-shadow:0 6px 16px rgba(0,0,0,.08);
+  background: white;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+}
+
+.card.edit {
+  border: 2px dashed #6a00ff;
 }
 
 .card img {
-  width:100%; aspect-ratio:1/1;
-  object-fit:cover; border-radius:12px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
 }
 
 .price {
-  color:#6a00ff; font-size:22px; font-weight:bold;
+  color: #6a00ff;
+  font-size: 22px;
+  font-weight: bold;
 }
 
 button {
-  width:100%; padding:14px; border:none;
-  border-radius:12px; background:#6a00ff;
-  color:white; font-size:16px; margin-top:8px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #6a00ff;
+  color: white;
+  font-size: 16px;
+  margin-top: 8px;
 }
 
 .admin-btn {
-  background:#444;
-}
-
-.edit {
-  border:2px dashed #6a00ff;
+  background: #444;
 }
 
 .modal {
-  display:none; position:fixed; inset:0;
-  background:#fff; z-index:10; padding:12px;
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: white;
+  z-index: 10;
+  padding: 12px;
 }
 
 input {
-  width:100%; padding:10px; margin:6px 0;
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
 }
 </style>
 </head>
@@ -56,8 +85,8 @@ input {
 <body>
 
 <header>
-  <b>Ozon | ПолитМайт</b>
-  <button class="admin-btn" onclick="toggleAdmin()" id="adminToggle">
+  <b>Ozon | ПолитМайн</b>
+  <button class="admin-btn" id="adminToggle" onclick="toggleAdmin()">
     ⚙️ Админка
   </button>
 </header>
@@ -65,19 +94,19 @@ input {
 <div class="container">
 
   <div class="card" id="productCard" onclick="cardClick()">
-    <img src="dern.png">
+    <img src="dern.png" alt="Дёрн">
     <h3 id="name">Дёрн (трава)</h3>
     <div>📦 В наличии: <b id="stock">64</b></div>
     <div class="price"><span id="price">25</span> ₽ / блок</div>
 
-    <button onclick="addToCart(event)" id="cartBtn">
+    <button id="cartBtn" onclick="addToCart(event)">
       🛒 В корзину
     </button>
   </div>
 
 </div>
 
-<!-- РЕДАКТОР -->
+<!-- РЕДАКТОР ТОВАРА -->
 <div class="modal" id="editor">
   <h2>✏️ Редактирование товара</h2>
 
@@ -93,8 +122,12 @@ input {
 const tg = window.Telegram.WebApp;
 tg.expand();
 
+/* ───────── НАСТРОЙКИ ───────── */
+const ADMIN_PASSWORD = "123456"; // поменяешь потом
+
 let adminMode = false;
 
+/* ───────── ДАННЫЕ ТОВАРА ───────── */
 let product = {
   name: "Дёрн (трава)",
   price: 25,
@@ -103,7 +136,7 @@ let product = {
 
 let cartCount = 0;
 
-// ─── RENDER ───
+/* ───────── РЕНДЕР ───────── */
 function render() {
   name.innerText = product.name;
   price.innerText = product.price;
@@ -122,13 +155,21 @@ function render() {
 
 render();
 
-// ─── ADMIN MODE ───
+/* ───────── АДМИНКА ───────── */
 function toggleAdmin() {
-  adminMode = !adminMode;
+  if (!adminMode) {
+    const pass = prompt("Введите пароль администратора:");
+    if (pass !== ADMIN_PASSWORD) {
+      alert("Неверный пароль");
+      return;
+    }
+    adminMode = true;
+  } else {
+    adminMode = false;
+  }
   render();
 }
 
-// ─── CARD CLICK ───
 function cardClick() {
   if (!adminMode) return;
 
@@ -138,7 +179,6 @@ function cardClick() {
   editStock.value = product.stock;
 }
 
-// ─── SAVE EDIT ───
 function saveEdit() {
   product.name = editName.value;
   product.price = Number(editPrice.value);
@@ -151,7 +191,7 @@ function closeEditor() {
   editor.style.display = "none";
 }
 
-// ─── CART ───
+/* ───────── КОРЗИНА ───────── */
 function addToCart(e) {
   e.stopPropagation();
 
