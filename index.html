@@ -17,15 +17,16 @@ header {
   background: #6a00ff;
   color: white;
   padding: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  text-align: center;
+  font-weight: bold;
 }
 
+/* контейнер */
 .container {
   padding: 12px;
 }
 
+/* карточка */
 .card {
   background: white;
   border-radius: 16px;
@@ -50,6 +51,7 @@ header {
   font-weight: bold;
 }
 
+/* кнопки */
 button {
   width: 100%;
   padding: 14px;
@@ -59,19 +61,69 @@ button {
   color: white;
   font-size: 16px;
   margin-top: 8px;
+  cursor: pointer;
 }
 
-.admin-btn {
+/* ⚙️ админка */
+.admin-gear {
+  position: fixed;
+  top: 10px;
+  right: 10px;
   background: #444;
+  color: white;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border: none;
+  font-size: 18px;
+  z-index: 20;
 }
 
+/* 🧺 корзина */
+.cart-btn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: #6a00ff;
+  color: white;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border: none;
+  font-size: 18px;
+  z-index: 20;
+}
+
+/* всплывашки */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2ecc71;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 20px;
+  display: none;
+  z-index: 40;
+}
+
+/* модалки */
 .modal {
   display: none;
   position: fixed;
   inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 30;
+}
+
+.modal-box {
   background: white;
-  z-index: 10;
-  padding: 12px;
+  margin: 15% auto;
+  padding: 16px;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 16px;
 }
 
 input {
@@ -84,86 +136,100 @@ input {
 
 <body>
 
-<header>
-  <b>Ozon | ПолитМайн</b>
-  <button class="admin-btn" id="adminToggle" onclick="toggleAdmin()">
-    ⚙️ Админка
-  </button>
-</header>
+<header>Ozon | ПолитМайн</header>
+
+<!-- 🧺 Корзина -->
+<button class="cart-btn" onclick="openCart()">🧺</button>
+
+<!-- ⚙️ Админка -->
+<button class="admin-gear" onclick="toggleAdmin()">⚙️</button>
 
 <div class="container">
-
   <div class="card" id="productCard" onclick="cardClick()">
     <img src="dern.png" alt="Дёрн">
-    <h3 id="name">Дёрн (трава)</h3>
-    <div>📦 В наличии: <b id="stock">64</b></div>
-    <div class="price"><span id="price">25</span> ₽ / блок</div>
-
-    <button id="cartBtn" onclick="addToCart(event)">
-      🛒 В корзину
-    </button>
+    <h3 id="name"></h3>
+    <div>📦 В наличии: <b id="stock"></b></div>
+    <div class="price"><span id="price"></span> ₽ / блок</div>
+    <button onclick="addToCart(event)">🛒 В корзину</button>
   </div>
-
 </div>
 
-<!-- РЕДАКТОР ТОВАРА -->
-<div class="modal" id="editor">
-  <h2>✏️ Редактирование товара</h2>
-
-  <input id="editName" placeholder="Название">
-  <input id="editPrice" type="number" placeholder="Цена">
-  <input id="editStock" type="number" placeholder="Количество">
-
-  <button onclick="saveEdit()">💾 Сохранить</button>
-  <button class="admin-btn" onclick="closeEditor()">Закрыть</button>
+<!-- 🧺 КОРЗИНА -->
+<div class="modal" id="cartModal">
+  <div class="modal-box">
+    <h2>Корзина</h2>
+    <div id="cartInfo"></div>
+    <button onclick="closeCart()">Закрыть</button>
+  </div>
 </div>
+
+<!-- ✏️ РЕДАКТОР -->
+<div class="modal" id="editModal">
+  <div class="modal-box">
+    <h2>Редактирование</h2>
+    <input id="editName" placeholder="Название">
+    <input id="editPrice" type="number" placeholder="Цена">
+    <input id="editStock" type="number" placeholder="Количество">
+    <button onclick="saveEdit()">Сохранить</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Админка активирована</div>
 
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-/* ───────── НАСТРОЙКИ ───────── */
-const ADMIN_PASSWORD = "123456"; // поменяешь потом
+/* ─── НАСТРОЙКИ ─── */
+const ADMIN_PASSWORD = "123456";
+
+/* ─── LOCAL STORAGE ─── */
+const defaultProduct = { name:"Дёрн (трава)", price:25, stock:64 };
+let product = JSON.parse(localStorage.getItem("product")) || defaultProduct;
+let cartCount = Number(localStorage.getItem("cart")) || 0;
 
 let adminMode = false;
 
-/* ───────── ДАННЫЕ ТОВАРА ───────── */
-let product = {
-  name: "Дёрн (трава)",
-  price: 25,
-  stock: 64
-};
-
-let cartCount = 0;
-
-/* ───────── РЕНДЕР ───────── */
+/* ─── RENDER ─── */
 function render() {
   name.innerText = product.name;
   price.innerText = product.price;
   stock.innerText = product.stock;
-
-  cartBtn.innerText = adminMode
-    ? "🛒 В корзину (админка активирована)"
-    : "🛒 В корзину";
-
-  adminToggle.innerText = adminMode
-    ? "⚙️ Админка (активировано)"
-    : "⚙️ Админка";
-
+  cartInfo.innerText = `${product.name} × ${cartCount} = ${cartCount * product.price} ₽`;
   productCard.classList.toggle("edit", adminMode);
-}
 
+  localStorage.setItem("product", JSON.stringify(product));
+  localStorage.setItem("cart", cartCount);
+}
 render();
 
-/* ───────── АДМИНКА ───────── */
+/* ─── КОРЗИНА ─── */
+function addToCart(e) {
+  e.stopPropagation();
+  if (product.stock <= 0) {
+    tg.showAlert("Нет в наличии");
+    return;
+  }
+  product.stock--;
+  cartCount++;
+  render();
+}
+
+function openCart() {
+  cartModal.style.display = "block";
+}
+
+function closeCart() {
+  cartModal.style.display = "none";
+}
+
+/* ─── АДМИНКА ─── */
 function toggleAdmin() {
   if (!adminMode) {
-    const pass = prompt("Введите пароль администратора:");
-    if (pass !== ADMIN_PASSWORD) {
-      alert("Неверный пароль");
-      return;
-    }
+    const pass = prompt("Пароль администратора:");
+    if (pass !== ADMIN_PASSWORD) return;
     adminMode = true;
+    showToast();
   } else {
     adminMode = false;
   }
@@ -172,8 +238,7 @@ function toggleAdmin() {
 
 function cardClick() {
   if (!adminMode) return;
-
-  editor.style.display = "block";
+  editModal.style.display = "block";
   editName.value = product.name;
   editPrice.value = product.price;
   editStock.value = product.stock;
@@ -183,31 +248,14 @@ function saveEdit() {
   product.name = editName.value;
   product.price = Number(editPrice.value);
   product.stock = Number(editStock.value);
-  closeEditor();
+  editModal.style.display = "none";
   render();
 }
 
-function closeEditor() {
-  editor.style.display = "none";
-}
-
-/* ───────── КОРЗИНА ───────── */
-function addToCart(e) {
-  e.stopPropagation();
-
-  if (adminMode) {
-    tg.showAlert("Админ-режим включён. Редактируйте карточку.");
-    return;
-  }
-
-  if (product.stock <= 0) {
-    tg.showAlert("Нет в наличии");
-    return;
-  }
-
-  product.stock--;
-  cartCount++;
-  render();
+/* ─── TOAST ─── */
+function showToast() {
+  toast.style.display = "block";
+  setTimeout(() => toast.style.display = "none", 2000);
 }
 </script>
 
